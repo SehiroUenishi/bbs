@@ -1,0 +1,59 @@
+﻿<?php
+    $inputDataUN = (string)$_POST['userName'];
+    $inputDataPW = (string)$_POST['password'];
+
+    // db接続
+    try 
+    {
+        $db = new PDO('mysql:host=localhost;dbname=snsDatabase;charset=utf8', $_ENV['DBUSER'], $_ENV['DBPASS']);
+    } 
+    catch (PDOException $e) 
+    {
+        exit();
+    }
+
+    //すでに登録されていないかuserNameを検索
+    $stmt = $db->prepare('SELECT * FROM userTable WHERE userName LIKE :searchChar');
+    $stmt -> execute(array(':searchChar' => $inputDataUN));
+
+    //検索結果をsearchResultに格納
+    $searchResult = $stmt -> fetchall();
+    if( count($searchResult) !== 0 )
+    {
+        if($searchResult[0]['password'] === $inputDataPW)
+        {
+            // db解放
+            $db = null;
+
+            //セッションにログインユーザーを登録
+            session_start();
+            $_SESSION['nowLogInUserId'] = $searchResult[0]['userId'];
+    
+            //成功画面に飛ばす
+            header( 'location:success.php' );
+            exit();
+        }
+        else
+        {
+            // db解放
+            $db = null;
+
+            //失敗画面に飛ばす
+            header( 'location:failure.php' );
+            exit();
+        }
+    }
+    else
+    {
+        // db解放
+        $db = null;
+
+        //失敗画面に飛ばす
+        header( 'location:failure.php' );
+        exit();
+    }
+
+    //ここは通らないはず
+    echo "この文章は表示されないはずです";
+    exit();
+?>
